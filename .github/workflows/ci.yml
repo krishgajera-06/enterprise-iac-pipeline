@@ -1,17 +1,17 @@
-name: Node.js CI
+name: Enterprise IaC Pipeline
 
 on:
   push:
     branches:
       - develop
-
+      - feature/**
   pull_request:
     branches:
       - develop
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  ci:
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Repository
@@ -20,11 +20,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install Dependencies
         working-directory: app
         run: npm install
 
       - name: Build Docker Image
-        run: docker build -t enterprise-app .
+        run: docker build -t enterprise-app:latest .
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: enterprise-app:latest
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
