@@ -26,6 +26,11 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Verify Node.js
+        run: |
+          node -v
+          npm -v
+
       - name: Install Dependencies
         working-directory: app
         run: npm install
@@ -33,13 +38,12 @@ jobs:
       - name: Build Docker Image
         run: docker build -t enterprise-app:latest .
 
+      - name: Verify Docker Image
+        run: docker images
+
       - name: Trivy Vulnerability Scan
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: enterprise-app:latest
-          format: table
-          exit-code: "0"
-          severity: CRITICAL,HIGH
+        run: |
+          trivy image --severity CRITICAL,HIGH --exit-code 0 enterprise-app:latest
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
